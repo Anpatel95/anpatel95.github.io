@@ -22,6 +22,7 @@ function handleFileSelect(e) {
   }
 
   const url = 'https://webhook.site/71e4b9c0-9d3b-4450-baa0-17f68686dc5d'
+  //const url = 'https://testajax.free.beeceptor.com/testingapi'
   const form = document.querySelector('form')
 
 form.addEventListener('submit', (e) => {
@@ -30,13 +31,13 @@ form.addEventListener('submit', (e) => {
   const files = document.querySelector('[type=file]').files
   const formData = new FormData()
 
+  alert(files.length);
   for (let i = 0; i < files.length; i++) {
     let file = files[i]
 
     formData.append('fileUploader', file)
   }
 
-  alert(formData);
   fetch(url, {
     method: 'POST',
     body: formData,
