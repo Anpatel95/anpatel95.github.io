@@ -17,8 +17,7 @@
   <div class="container py-3">
       <div class="input-group">
           <form enctype="multipart/form-data" method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
+            <input name="fileUploader" id="fileUploader" type="file" multiple="" />
             <button type="submit" class="btn btn-primary" value="Confirm">Submit</button>
           </form>
       </div>
