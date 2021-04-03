@@ -21,7 +21,7 @@ function handleFileSelect(e) {
 
   }
 
-  const url = 'https://webhook.site/4b1af943-d13a-4fc8-8302-6f4b76ceb419'
+  const url = 'https://webhook.site/12e6cbe0-b85c-4b73-87a4-2b7f816ad71d'
   //const url = 'https://testajax.free.beeceptor.com/testingapi'
   const form = document.querySelector('form')
 
@@ -38,10 +38,7 @@ form.addEventListener('submit', (e) => {
     formData.append('fileUploader', file)
 
   }
-  // Log the key/value pairs
-for (var pair of formData.entries()) {
-  console.log(pair[0] + " - " + pair[1]);
-}
+
 
 //print the formData as Json. add file name as a key if possible
   fetch(url, {
