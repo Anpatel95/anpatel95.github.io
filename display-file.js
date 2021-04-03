@@ -34,18 +34,17 @@ form.addEventListener('submit', (e) => {
   alert(files.length);
   for (let i = 0; i < files.length; i++) {
     let file = files[i]
-    console.log(file)
     formData.append('fileUploader', file)
-
   }
 
-
+alert(url);
 //print the formData as Json. add file name as a key if possible
   fetch(url, {
     method: 'POST',
     body: formData,
   }).then((response) => {
     console.log(response)
+    alert(response)
   })
 })
 }
