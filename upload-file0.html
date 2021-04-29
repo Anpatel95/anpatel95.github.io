@@ -16,10 +16,26 @@
 <div class="container-fluid">
   <div class="container py-3">
       <div class="input-group">
-          <form enctype="multipart/form-data" method="post">
-            <input type="file" name="fileUploader" id="files" type="file" multiple /><br/>
-            <div id="selectedFiles"></div>
-            <button type="submit" name="submit" class="btn btn-primary" value="Confirm">Submit</button>
+          <form id="fileUploadForm">
+            <div class="form-group">
+              <label for="exampleInputEmail1">Email address</label>
+              <input type="email" class="form-control" id="emailInput" aria-describedby="emailHelp" placeholder="Enter email" required>
+            </div>
+          <!--  <div class="form-group">
+              <label for="exampleFormControlFile1">Upload Files</label>
+              <input type="file" class="form-control-file" name="fileUploader" id="files" multiple required><br/>
+              <div id="selectedFiles"></div>
+            </div> -->
+            <div class="custom-file">
+              <input type="file" class="custom-file-input" name="fileUploader" id="files" multiple required><br/>
+              <label >Selected File(s) -</label><br/>
+              <label class="custom-file-label" for="customFile">Choose file</label>
+              <div id="selectedFiles"></div>
+            </div>
+
+          <!--  <input type="file" name="fileUploader" id="files" type="file" multiple /><br/>
+            <div id="selectedFiles"></div> -->
+            <button type="submit" name="submit" class="btn btn-primary">Submit</button>
           </form>
       </div>
   </div>
@@ -27,11 +43,17 @@
 
 
 <!-- The core Firebase JS SDK is always required and must be listed first -->
-<script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-app.js"></script>
+<!-- <script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-app.js"></script>-->
 
 <!-- TODO: Add SDKs for Firebase products that you want to use
      https://firebase.google.com/docs/web/setup#available-libraries -->
-<script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-analytics.js"></script>
+<!--<script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-analytics.js"></script>
+<script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-firestore.js"></script>-->
+<script src="https://www.gstatic.com/firebasejs/8.4.2/firebase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.js"></script>
 
 <script>
   // Your web app's Firebase configuration
@@ -47,8 +69,6 @@
   };
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
-  firebase.analytics();
-
 
   var selDiv = "";
 
@@ -68,38 +88,132 @@
     var files = e.target.files;
     for(var i=0; i<files.length; i++) {
       var f = files[i];
-
       selDiv.innerHTML += f.name + "<br/>";
 
     }
 
 const form = document.querySelector('form')
+const url = 'https://webhook.site/79148758-8b34-47a6-825e-4df5a640f708'
+
 form.addEventListener('submit', (e) => {
   e.preventDefault()
 
-  const files = document.querySelector('[type=file]').files
-  const formData = new FormData()
+  var today = new Date();
+  var datetime = today.getFullYear().toString()+(today.getMonth()+1).toString()+today.getDate().toString() + today.getHours().toString()  + today.getMinutes().toString() + today.getSeconds().toString();
+  var email = document.getElementById('emailInput').value;
 
-  alert(files.length);
+  const storage1 = firebase.storage();
+  firebase.analytics();
+
+  var files = document.querySelector('[type=file]').files
+
+  var zip = new JSZip();
   for (let i = 0; i < files.length; i++) {
     var file = files[i]
-
-    var storage = require('@google-cloud/storage')
-    var storageRef = firebase.storage().ref('CAD_folder/' + file.name);
-
-    //upload files
-    var task = storageRef.put(file);
-
-    alert("firebase storage hit");
-
-    formData.append('fileUploader', file);
+    zip.file(file.name, file);
   }
 
-})
+    // Generate the zip file asynchronously
+  zip.generateAsync({type:"blob"})
+  .then(function(content) {
+      // Force down of the Zip file
+      //saveAs(content, "archive1.zip");
+      storeInFirebase(content);
+  });
+
+function storeInFirebase(content){
+
+  var file = content;
+
+  //var storage = require('@google-cloud/storage')
+  var storageRef = firebase.storage().ref('CAD_folder/' + email + '/'+ datetime +'.zip');
+
+  //upload files
+  var task = storageRef.put(file);
+
+  //var task = storageRef.put(file).then((snapshot) => {
+    //console.log('Uploaded a blob or file!');
+  //});
+
+  task.on('state_changed',
+    (snapshot) => {
+      // Observe state change events such as progress, pause, and resume
+      // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+      var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      console.log('Upload is ' + progress + '% done');
+      switch (snapshot.state) {
+        case firebase.storage.TaskState.PAUSED: // or 'paused'
+          console.log('Upload is paused');
+          break;
+        case firebase.storage.TaskState.RUNNING: // or 'running'
+          console.log('Upload is running');
+          break;
+      }
+    },
+    (error) => {
+                // Handle unsuccessful uploads
+                // A full list of error codes is available at
+        // https://firebase.google.com/docs/storage/web/handle-errors
+        switch (error.code) {
+          case 'storage/unauthorized':
+            // User doesn't have permission to access the object
+            break;
+          case 'storage/canceled':
+            // User canceled the upload
+            break;
+
+          case 'storage/unknown':
+            // Unknown error occurred, inspect error.serverResponse
+            break;
+        }
+    },
+    () => {
+      // Handle successful uploads on complete
+      // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+      task.snapshot.ref.getDownloadURL().then((downloadURL) => {
+        console.log('File available at', downloadURL);
+        alert(downloadURL);
+
+        /*const fullUrl = `${url}?formlink=${downloadURL.toString()}`;
+
+        fetch(fullUrl, {
+          method: 'get',
+        }).then((response) => {
+          console.log(response)
+          alert(response)
+        })*/
+
+
+      });
+    }
+  );
+}//firebase storage
+
+/*
+task.on('state_changed',
+  function progress (snapshot) {
+    self.status = 'UPLOADING...'
+    self.percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+  },
+  function error () {
+    self.status = 'FAILED TRY AGAIN!'
+    self.isUploading = false
+  },
+
+  function complete (event) {
+    self.status = 'UPLOAD COMPLETED'
+    self.isUploading = false
+    storageRef.getDownloadURL().then((url) => { console.log(url) })
+  }
+)
+}*/
+
+document.getElementById('files').value = "";
+selDiv.innerHTML = "";
+form.reset();
+})//submit event ends
 }
 </script>
-
-
 
 </body>
 
