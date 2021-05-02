@@ -97,7 +97,8 @@
     }
 
 const form = document.querySelector('form')
-const url = 'https://webhook.site/79148758-8b34-47a6-825e-4df5a640f708'
+//const url = 'https://webhook.site/79148758-8b34-47a6-825e-4df5a640f708'
+//const url = 'http://url/quote/'
 
 form.addEventListener('submit', (e) => {
   e.preventDefault()
@@ -178,10 +179,27 @@ function storeInFirebase(content){
         console.log('File available at', downloadURL);
         alert(downloadURL);
 
-        /*const fullUrl = `${url}?formlink=${downloadURL.toString()}`;
 
+        let objectExample = {
+            // "url": "https://form.123formbuilder.com/upload_dld.php?fileid=6783a0e80e717bec27eb08b71cfa2428"
+            "url": downloadURL.toString()
+        }
+
+
+        const fullUrl = `${url}?formlink=${downloadURL.toString()}`;
+
+        alert("URL "+fullUrl);
+        console.log("Full URL " + fullUrl );
         fetch(fullUrl, {
           method: 'get',
+        }).then((response) => {
+          console.log(response)
+          alert(response)
+        })
+
+      /*  fetch(fullUrl, {
+          method: 'get',
+          body: objectExample,
         }).then((response) => {
           console.log(response)
           alert(response)
