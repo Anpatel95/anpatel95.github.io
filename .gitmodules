@@ -1,0 +1,6 @@
+[submodule "SpliceAndPriceAPI"]
+	path = SpliceAndPriceAPI
+	url = https://github.com/Anpatel95/SpliceAndPriceAPI.git
+[submodule "SliceAndPriceAPI"]
+	path = SliceAndPriceAPI
+	url = https://github.com/Anpatel95/SliceAndPriceAPI.git

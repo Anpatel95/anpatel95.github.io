@@ -3,6 +3,7 @@ const form = document.querySelector('form')
 
 form.addEventListener('submit', (e) => {
 e.preventDefault()
+alert("test complete")
       //main thread
       var fileUploadWorker = new Worker("fileReaderWorker.js");
       var base64 = '';
