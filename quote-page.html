@@ -200,8 +200,6 @@ async function sapAPIasync(){
         mode: 'cors', // no-cors, *cors, same-origin
       }).then((response) => {
         response.json().then(function(data) {
-          console.log("data -")
-          console.log(data);
 
           let fileNameList = [];
           let timeList =[];
@@ -237,7 +235,7 @@ async function sapAPIasync(){
                   priceList.push(data[key][i][b].toFixed(2));
                   subTotal += Number(data[key][i][b].toFixed(2));
                 }
-                console.log(data[key][i][b], key, i, b);
+                //console.log(data[key][i][b], key, i, b);
               }
             }
           }
