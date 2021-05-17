@@ -194,8 +194,8 @@ task.on('state_changed',
       let price1 = 0.0;
       let price2 = 0.0;
 
-async function sapAPIasync(){
-      await fetch(fullUrl, {
+function sapAPIasync(){
+      fetch(fullUrl, {
         method: 'get',
         mode: 'cors', // no-cors, *cors, same-origin
       }).then((response) => {
