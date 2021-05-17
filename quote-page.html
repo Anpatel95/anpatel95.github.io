@@ -8,15 +8,21 @@
 
 <body>
 
+<!--<div class="text-center">
+  <img src="https://static.wixstatic.com/media/b022ff_22f5c53ac9664c469d27596ae1809d10~mv2.gif" style="width:40%; height: 150px;" class="rounded mx-auto d-block" alt="...">
+</div>-->
+
 </div>
-<div class="container-fluid">
-  <div class="container py-3">
-      <div class="input-group">
+<div class="container-fluid" id="main">
+  <div class="container py-3" id="contnID">
+      <div class="input-group" id="grpID">
           <form id="fileUploadForm">
+
             <div class="form-group">
               <label><strong>First Name -</strong></label>
               <input type="text" class="form-control" id="Fname" placeholder="First name">
             </div>
+
             <div class="form-group">
               <label ><strong>Last Name -</strong></label>
               <input type="text" class="form-control" id="Lname" placeholder="Last name">
@@ -27,20 +33,18 @@
               <input type="email" class="form-control" id="emailInput" aria-describedby="emailHelp" placeholder="Enter email" required>
             </div>
 
-
             <div class="custom-file">
               <input type="file" accept=".stl" class="custom-file-input" name="fileUploader" id="files" multiple required><br/>
               <label><strong>Selected File(s) -</strong></label><br/>
               <label class="custom-file-label" for="customFile">Choose CAD .stl files</label>
               <div id="selectedFiles"></div>
             </div>
+
             <div class="form-group">
               <label for="exampleFormControlTextarea1"><strong>Additional comments -</strong></label>
               <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
             </div>
 
-          <!--  <input type="file" name="fileUploader" id="files" type="file" multiple /><br/>
-            <div id="selectedFiles"></div> -->
             <button type="submit" name="submit" class="btn btn-primary">Submit</button>
           </form>
       </div>
@@ -60,7 +64,365 @@
 <script src="https://www.gstatic.com/firebasejs/8.4.2/firebase-firestore.js"></script>-->
 <script src="https://www.gstatic.com/firebasejs/8.4.2/firebase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.js"></script>
-<script type="module" src="SliceAndPriceAPI/SliceAndPrice.js"></script>
+<script>
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+var firebaseConfig = {
+  apiKey: "AIzaSyAzsFnKfcbs86BNxlADdauYD4JN2ll93fI",
+  authDomain: "arcane-rune-270.firebaseapp.com",
+  projectId: "arcane-rune-270",
+  storageBucket: "arcane-rune-270.appspot.com",
+  messagingSenderId: "122978082703",
+  appId: "1:122978082703:web:b6fa12baebc23ff7de75fa",
+  measurementId: "G-4QXDZME940"
+};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+var selDiv = "";
+
+document.addEventListener("DOMContentLoaded", init, false);
+
+function init() {
+  document.querySelector('#files').addEventListener('change', handleFileSelect, false);
+  selDiv = document.querySelector("#selectedFiles");
+}
+
+function handleFileSelect(e) {
+
+  if(!e.target.files) return;
+
+  selDiv.innerHTML = "";
+
+  var files = e.target.files;
+  for(var i=0; i<files.length; i++) {
+    var f = files[i];
+    selDiv.innerHTML += f.name + "<br/>";
+
+  }
+
+const form = document.querySelector('form')
+//const url = 'https://webhook.site/79148758-8b34-47a6-825e-4df5a640f708'
+const url = 'http://3.128.179.141:8000/quote/'
+
+form.addEventListener('submit', (e) => {
+e.preventDefault()
+var today = new Date();
+var datetime = today.getFullYear().toString()+(today.getMonth()+1).toString()+today.getDate().toString() + today.getHours().toString()  + today.getMinutes().toString() + today.getSeconds().toString();
+var email = document.getElementById('emailInput').value;
+
+const storage1 = firebase.storage();
+firebase.analytics();
+
+var files = document.querySelector('[type=file]').files
+
+var zip = new JSZip();
+for (let i = 0; i < files.length; i++) {
+  var file = files[i]
+  zip.file(file.name, file);
+}
+
+  // Generate the zip file asynchronously
+zip.generateAsync({type:"blob"})
+.then(function(content) {
+    // Force down of the Zip file
+    //saveAs(content, "archive1.zip");
+    storeInFirebase(content);
+});
+
+function storeInFirebase(content){
+
+var file = content;
+
+//var storage = require('@google-cloud/storage')
+var storageRef = firebase.storage().ref('CAD_folder/' + email + '/'+ datetime +'.zip');
+
+//upload files
+var task = storageRef.put(file);
+
+//var task = storageRef.put(file).then((snapshot) => {
+  //console.log('Uploaded a blob or file!');
+//});
+
+task.on('state_changed',
+  (snapshot) => {
+    // Observe state change events such as progress, pause, and resume
+    // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+    var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+    console.log('Upload is ' + progress + '% done');
+    switch (snapshot.state) {
+      case firebase.storage.TaskState.PAUSED: // or 'paused'
+        console.log('Upload is paused');
+        break;
+      case firebase.storage.TaskState.RUNNING: // or 'running'
+        console.log('Upload is running');
+        break;
+    }
+  },
+  (error) => {
+              // Handle unsuccessful uploads
+              // A full list of error codes is available at
+      // https://firebase.google.com/docs/storage/web/handle-errors
+      switch (error.code) {
+        case 'storage/unauthorized':
+          // User doesn't have permission to access the object
+          break;
+        case 'storage/canceled':
+          // User canceled the upload
+          break;
+
+        case 'storage/unknown':
+          // Unknown error occurred, inspect error.serverResponse
+          break;
+      }
+  },
+  () => {
+    // Handle successful uploads on complete
+    // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+    task.snapshot.ref.getDownloadURL().then((downloadURL) => {
+      console.log('File available at', downloadURL);
+
+      let objectExample = {
+          // "url": "https://form.123formbuilder.com/upload_dld.php?fileid=6783a0e80e717bec27eb08b71cfa2428"
+          "url": downloadURL.toString()
+      }
+
+      const fullUrl = `${url}?formlink=${downloadURL.toString()}`;
+
+      let file1 = "";
+      let file2 = "";
+      let price1 = 0.0;
+      let price2 = 0.0;
+
+async function sapAPIasync(){
+      await fetch(fullUrl, {
+        method: 'get',
+        mode: 'cors', // no-cors, *cors, same-origin
+      }).then((response) => {
+        response.json().then(function(data) {
+          console.log("data -")
+          console.log(data);
+
+          let fileNameList = [];
+          let timeList =[];
+          let materialList = [];
+          let priceList = [];
+
+          let subTotal = 0.0;
+
+          for(var key in data){
+            for (var i = 0; i < data[key].length; i++) {
+              for (var b = 0; b < data[key][i].length; b++) {
+
+                if (b === 0 && i === 0){
+                  file1 = data[key][i][b];
+                }else if(b === 0 && i === 1){
+                  file2 = data[key][i][b];
+                }
+                      if (b === 3 && i === 0){
+                        price1 =data[key][i][b] ;
+                        price1 = price1.toFixed(2);
+                      }else if(b === 3 && i === 1){
+                        price2 = data[key][i][b] ;
+                        price2 = price2.toFixed(2);
+                      }
+
+                if (b == 0){
+                  fileNameList.push(data[key][i][b]);
+                }else if (b == 1) {
+                  timeList.push(data[key][i][b]);
+                }else if (b == 2){
+                  materialList.push(data[key][i][b]);
+                }else if (b == 3){
+                  priceList.push(data[key][i][b].toFixed(2));
+                  subTotal += Number(data[key][i][b].toFixed(2));
+                }
+                console.log(data[key][i][b], key, i, b);
+              }
+            }
+          }
+
+          clearDiv();
+          priceTable(fileNameList, timeList, materialList, priceList, subTotal.toFixed(2));
+
+
+        });
+
+      })
+}//sapAPIasync ends
+sapAPIasync();
+
+
+    /*  fetch(fullUrl, {
+        method: 'get',
+        body: objectExample,
+      }).then((response) => {
+        console.log(response)
+        alert(response)
+      })*/
+
+  /*    var xhr = new XMLHttpRequest();
+          xhr.open('GET', fullUrl);
+          xhr.setRequestHeader('mode', 'no-cors');
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.onload = function () {
+            // Request finished. Do processing here.
+            console.log(xhr.response);
+          };
+          xhr.send(); */
+
+
+    });
+  }
+);
+}//firebase storage
+
+/*
+task.on('state_changed',
+function progress (snapshot) {
+  self.status = 'UPLOADING...'
+  self.percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+},
+function error () {
+  self.status = 'FAILED TRY AGAIN!'
+  self.isUploading = false
+},
+
+function complete (event) {
+  self.status = 'UPLOAD COMPLETED'
+  self.isUploading = false
+  storageRef.getDownloadURL().then((url) => { console.log(url) })
+}
+)
+}*/
+
+document.getElementById('files').value = "";
+selDiv.innerHTML = "";
+form.reset();
+
+function clearDiv() {
+    document.getElementById("contnID").remove();
+  //  let hideDiv = document.getElementById("contnID")
+  //  if (hideDiv.style.display === "none") {
+  //    hideDiv.style.display = "block";
+  //  } else {
+  //    hideDiv.style.display = "none";
+  //  }
+}//clearDiv ends
+
+function priceTable(fileNameList, timeList, materialList, priceList, subTotal){
+
+    let taxamt = (subTotal * 0.06).toFixed(2);
+    let total = (Number(subTotal) + Number(taxamt)).toFixed(2);
+
+    //create table
+    let table = document.createElement("table");
+    table.setAttribute('class', 'table table-bordered table-hover');
+
+    //adding header
+    let thead = document.createElement('thead');
+    thead.setAttribute('class', 'thead-light');
+    let headtr = document.createElement('tr');
+    let headth1 = document.createElement('th');
+    let headth2 = document.createElement('th');
+
+    headth1.innerHTML = "File Name"
+    headth1.setAttribute('scope','col');
+    headth2.innerHTML = "Price"
+    headth2.setAttribute('scope','col');
+    headtr.appendChild(headth1);
+    headtr.appendChild(headth2);
+
+    thead.appendChild(headtr);
+    table.appendChild(thead);
+
+    //input data
+    let tbody = document.createElement('tbody');
+    for (let i = 0; i < fileNameList.length; i++){
+      let row = document.createElement("tr");
+      for (let j = 0; j < 2; j++){
+        let cell = document.createElement("td");
+        let cellText;
+        if (j == 0){
+          cellText = document.createTextNode(fileNameList[i])
+        }else if (j==1) {
+          cellText = document.createTextNode("$"+priceList[i])
+        }
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+      }
+      //add row to tbody
+      tbody.appendChild(row);
+    }
+
+    let subtotalRow = document.createElement("tr");
+    let taxRow  = document.createElement("tr");
+    let totalRow = document.createElement("tr");
+    subtotalRow.setAttribute('class','table-info');
+    taxRow.setAttribute('class','table-info');
+    totalRow.setAttribute('class','table-info');
+
+    let subtotalcell = document.createElement("th");
+    let taxcell = document.createElement("th");
+    let totalcell = document.createElement("th");
+    subtotalcell.setAttribute('scope','row');
+    taxcell.setAttribute('scope','row');
+    totalcell.setAttribute('scope','row');
+
+    let subtotalcell2 = document.createElement("th");
+    let taxcell2 = document.createElement("th");
+    let totalcell2 = document.createElement("th");
+
+    let subtotalText = document.createTextNode("Subtotal");
+    let taxText = document.createTextNode("Tax 6%");
+    let totalText = document.createTextNode("Total");
+
+    let subtotalval = document.createTextNode("$"+subTotal);
+    let taxval = document.createTextNode("$"+String(taxamt));
+    let totalval = document.createTextNode("$"+String(total));
+
+    subtotalcell.appendChild(subtotalText);
+    taxcell.appendChild(taxText);
+    totalcell.appendChild(totalText);
+
+    subtotalcell2.appendChild(subtotalval);
+    taxcell2.appendChild(taxval);
+    totalcell2.appendChild(totalval);
+
+    subtotalRow.appendChild(subtotalcell);
+    taxRow.appendChild(taxcell);
+    totalRow.appendChild(totalcell);
+
+    subtotalRow.appendChild(subtotalcell2);
+    taxRow.appendChild(taxcell2);
+    totalRow.appendChild(totalcell2);
+
+    tbody.appendChild(subtotalRow);
+    tbody.appendChild(taxRow);
+    tbody.appendChild(totalRow);
+
+
+
+
+
+    table.appendChild(tbody);
+
+    // create div and append table
+    let divcont = document.createElement('div');
+    divcont.setAttribute('class', 'container py-3');
+    divcont.setAttribute('id', 'contid');
+
+    document.getElementById("main").appendChild(divcont);
+    document.getElementById("contid").appendChild(table);
+
+
+
+}//priceTable ends
+
+})//submit event ends
+}//handleFileSelect
+
+</script>
 </body>
 
 
